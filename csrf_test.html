@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>CSRF PoC — Тест атаки</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; background: #1a1a2e; color: #eee; padding: 20px; }
+        h1 { color: #e74c3c; }
+        .test { background: #16213e; border-radius: 10px; padding: 20px; margin: 15px 0; }
+        .test h3 { margin-top: 0; }
+        button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 5px; }
+        .btn-attack { background: #e74c3c; color: white; }
+        .btn-info { background: #3498db; color: white; }
+        #results { background: #0a0a1a; padding: 15px; border-radius: 8px; margin-top: 10px; white-space: pre-wrap; font-family: monospace; font-size: 13px; min-height: 40px; }
+        .pass { color: #2ecc71; font-weight: bold; }
+        .fail { color: #e74c3c; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h1>🔐 CSRF PoC — Тестирование защиты</h1>
+<p>Откройте этот файл <b>в том же браузере</b>, где вы залогинены на <code>http://localhost:8080</code></p>
+
+<div id="results">Результаты появятся здесь...</div>
+
+<div class="test">
+    <h3>Тест 1: POST без CSRF-токена</h3>
+    <p>Отправляем POST на <code>/api/save-lab</code> без токена. Ожидание: <b>403 Forbidden</b></p>
+    <button class="btn-attack" onclick="test1()">▶ Запустить тест 1</button>
+</div>
+
+<div class="test">
+    <h3>Тест 2: POST с поддельным CSRF-токеном</h3>
+    <p>Отправляем POST с фейковым токеном. Ожидание: <b>403 Forbidden</b></p>
+    <button class="btn-attack" onclick="test2()">▶ Запустить тест 2</button>
+</div>
+
+<div class="test">
+    <h3>Тест 3: Автоматическая отправка формы (классическая CSRF-атака)</h3>
+    <p>Имитируем скрытую форму, которая отправляется автоматически. Ожидание: <b>403 Forbidden</b></p>
+    <button class="btn-attack" onclick="test3()">▶ Запустить тест 3</button>
+</div>
+
+<div class="test">
+    <h3>Тест 4: GET вместо POST</h3>
+    <p>Пробуем отправить GET на POST-эндпоинт. Ожидание: <b>405 Method Not Allowed</b></p>
+    <button class="btn-attack" onclick="test4()">▶ Запустить тест 4</button>
+</div>
+
+<div class="test">
+    <h3>Тест 5: Доступ к защищённой странице без логина</h3>
+    <p>Проверяем, перенаправляет ли <code>/</code> на логин. Ожидание: <b>302 → /login</b></p>
+    <button class="btn-info" onclick="test5()">▶ Запустить тест 5</button>
+</div>
+
+<script>
+const API = 'http://localhost:8080/api/save-lab';
+const log = document.getElementById('results');
+
+function addResult(name, status, expected, verdict) {
+    const cls = verdict === 'PASS' ? 'pass' : 'fail';
+    log.innerHTML += `\n${name}\n  Ответ сервера: ${status}\n  Ожидание:     ${expected}\n  Результат:    <span class="${cls}">${verdict}</span>\n${'─'.repeat(50)}`;
+}
+
+// Тест 1: POST без токена
+async function test1() {
+    try {
+        const res = await fetch(API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ attack: 'no-csrf-token' })
+        });
+        const ok = res.status === 403;
+        addResult('ТЕСТ 1: POST без токена', res.status + ' ' + res.statusText, '403 Forbidden', ok ? 'PASS ✅' : 'FAIL ❌');
+    } catch (e) {
+        addResult('ТЕСТ 1: POST без токена', 'Ошибка сети: ' + e.message, '403 Forbidden', 'НЕОПРЕДЕЛЕНО ⚠️');
+    }
+}
+
+// Тест 2: POST с фейковым токеном
+async function test2() {
+    try {
+        const res = await fetch(API, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': 'fake-token-12345'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ attack: 'fake-csrf-token' })
+        });
+        const ok = res.status === 403;
+        addResult('ТЕСТ 2: POST с фейковым токеном', res.status + ' ' + res.statusText, '403 Forbidden', ok ? 'PASS ✅' : 'FAIL ❌');
+    } catch (e) {
+        addResult('ТЕСТ 2: POST с фейковым токеном', 'Ошибка сети: ' + e.message, '403 Forbidden', 'НЕОПРЕДЕЛЕНО ⚠️');
+    }
+}
+
+// Тест 3: Скрытая форма
+function test3() {
+    const iframe = document.createElement('iframe');
+    iframe.name = 'csrf-frame';
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = API;
+    form.target = 'csrf-frame';
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'data';
+    input.value = 'csrf-attack-via-form';
+    form.appendChild(input);
+    document.body.appendChild(form);
+
+    iframe.onload = function() {
+        addResult('ТЕСТ 3: Скрытая форма (классика CSRF)', 'Форма отправлена в iframe', '403 Forbidden (или ошибка загрузки)', 'Проверь вкладку Network в DevTools');
+        document.body.removeChild(iframe);
+        document.body.removeChild(form);
+    };
+    form.submit();
+}
+
+// Тест 4: GET вместо POST
+async function test4() {
+    try {
+        const res = await fetch(API, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        const ok = res.status === 405;
+        addResult('ТЕСТ 4: GET вместо POST', res.status + ' ' + res.statusText, '405 Method Not Allowed', ok ? 'PASS ✅' : 'FAIL ❌');
+    } catch (e) {
+        addResult('ТЕСТ 4: GET вместо POST', 'Ошибка сети: ' + e.message, '405', 'НЕОПРЕДЕЛЕНО ⚠️');
+    }
+}
+
+// Тест 5: Доступ без логина
+async function test5() {
+    try {
+        const res = await fetch('http://localhost:8080/', {
+            method: 'GET',
+            credentials: 'omit',    // без cookies — имитируем неавторизованного
+            redirect: 'manual'
+        });
+        // redirect:'manual' → opaqueredirect (status=0) если 302
+        if (res.type === 'opaqueredirect' || res.status === 302) {
+            addResult('ТЕСТ 5: Доступ без логина', 'Redirect (302)', 'Redirect → /login', 'PASS ✅');
+        } else {
+            addResult('ТЕСТ 5: Доступ без логина', res.status + ' ' + res.statusText, 'Redirect → /login', res.status === 200 ? 'FAIL ❌ (страница доступна!)' : 'НЕОПРЕДЕЛЕНО ⚠️');
+        }
+    } catch (e) {
+        addResult('ТЕСТ 5: Доступ без логина', 'Ошибка: ' + e.message, 'Redirect', 'НЕОПРЕДЕЛЕНО ⚠️');
+    }
+}
+</script>
+
+</body>
+</html>
