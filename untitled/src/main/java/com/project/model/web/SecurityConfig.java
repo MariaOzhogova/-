@@ -23,7 +23,8 @@ public class SecurityConfig {
                                 "/style.css",
                                 "/script.js",
                                 "/favicon.ico",
-                                "/csrf_test.html"
+                                "/csrf_test.html",
+                                "/load_test.html"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
