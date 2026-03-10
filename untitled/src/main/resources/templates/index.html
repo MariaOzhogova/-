@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Lab IRNTU — Закон Малюса</title>
+
+    <!-- CSRF Token Meta Tags -->
+    <meta th:if="${_csrf != null}" name="_csrf" th:content="${_csrf.token}"/>
+    <meta th:if="${_csrf != null}" name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="main-layout">
+    <div class="col-left">
+        <div class="card header-card">
+            <div>
+                <h1 class="title">Стенд №1: Закон Малюса</h1>
+                <p class="subtitle">ИРНИТУ • ИТиАД • ИСИБ</p>
+            </div>
+            <div class="formula">
+                $$I = (I_{max} - I_{min}) \cos^2(\alpha_{diff}) + I_{min}$$
+            </div>
+        </div>
+
+        <div class="card bench">
+            <div class="laser-unit bench-item">
+                <div class="laser-label">ИСТОЧНИК</div>
+                <div class="laser-nozzle"></div>
+                <div class="laser-led"></div>
+                <div class="hover-info"><b>Лазер:</b> Генерирует поток естественного света.</div>
+            </div>
+
+            <div class="beam bench-item" id="beam-1"><div class="beam-core"></div></div>
+            <div class="beam bench-item" id="beam-2"><div class="beam-core"></div></div>
+            <div class="beam bench-item" id="beam-3"><div class="beam-core"></div></div>
+
+            <div class="bench-item" id="pos-pol">
+                <div class="optic-group">
+                    <div class="rim" id="rim-p"><div class="glass"><div class="vector"></div></div></div>
+                    <div class="label-text">Поляризатор</div>
+                    <div class="hover-info"><b>Поляризатор:</b> Это "решетка". Она пропускает только те волны, которые совпадают с её прорезями.</div>
+                </div>
+            </div>
+
+            <div class="bench-item" id="pos-an">
+                <div class="optic-group">
+                    <div class="rim" id="rim-a"><div class="glass"><div class="vector"></div></div></div>
+                    <div class="label-text">Анализатор</div>
+                    <div class="hover-info"><b>Анализатор:</b> Вторая "решетка". Вращай её, чтобы перекрыть свет.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card chart-card">
+            <canvas id="mainChart" height="280"></canvas>
+            <button id="btn-clear">Очистить данные</button>
+            <button id="btn-save" style="background:#22c55e; color:white; border:none; padding:12px; border-radius:10px; width:100%; margin-top:15px; cursor:pointer; font-weight:bold; text-transform:uppercase;">💾 Сохранить результаты</button>
+        </div>
+    </div>
+
+    <div class="col-right">
+        <div class="card res-box">
+            <span class="res-title">Интенсивность</span>
+            <big id="val-i">100%</big>
+        </div>
+
+        <div class="card controls">
+            <div class="control-group">
+                <div class="control-header">
+                    <label class="label-gold">Поляризатор (°)</label>
+                    <input type="number" id="n-p" class="num-in" value="0">
+                </div>
+                <input type="range" id="r-p" min="0" max="360" value="0" step="1" class="slider-gold">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <label class="label-blue">Анализатор (°)</label>
+                    <input type="number" id="n-a" class="num-in" value="0">
+                </div>
+                <input type="range" id="r-a" min="0" max="360" value="0" step="1" class="slider-blue">
+            </div>
+
+            <div class="mini-control">
+                <div class="mini-header">
+                    <span>Imax (%)</span>
+                    <input type="number" id="n-max" value="100" class="num-in-small">
+                </div>
+                <input type="range" id="r-max" min="50" max="100" value="100" style="width:100%">
+            </div>
+
+            <div class="mini-control">
+                <div class="mini-header">
+                    <span>Imin (%)</span>
+                    <input type="number" id="n-min" value="5" class="num-in-small">
+                </div>
+                <input type="range" id="r-min" min="0" max="30" value="5" style="width:100%">
+            </div>
+        </div>
+
+        <div class="card manual-text">
+            <h3>📖 Справка для новичка</h3>
+            <div class="manual-item">
+                <strong>1. Природа света</strong>
+                <p>Свет — это волна. Лазер испускает хаотичные волны.</p>
+            </div>
+            <div class="manual-item">
+                <strong>2. Суть опыта</strong>
+                <p>Мы ставим две "решетки". Первая выравнивает свет. Вторая проверяет его.</p>
+            </div>
+            <div class="manual-item">
+                <strong>3. Закон Малюса</strong>
+                <p>Если решетки скрещены (90°) — свет не проходит.</p>
+            </div>
+            <div id="status">Готов к работе</div>
+        </div>
+    </div>
+</div>
+
+<!-- Подключаем JavaScript -->
+<script src="/script.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false}
+            ]
+        });
+    });
+</script>
+
+</body>
+</html>
