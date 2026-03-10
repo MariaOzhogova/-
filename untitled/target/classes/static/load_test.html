@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Нагрузочный тест</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; background: #1a1a2e; color: #eee; padding: 20px; }
+        h1 { color: #3498db; }
+        .config { background: #16213e; border-radius: 10px; padding: 20px; margin: 15px 0; display: flex; flex-wrap: wrap; gap: 15px; align-items: end; }
+        .config label { display: block; font-size: 13px; color: #aaa; margin-bottom: 4px; }
+        .config input, .config select { padding: 8px 12px; border-radius: 6px; border: 1px solid #334; background: #0a0a1a; color: #eee; font-size: 14px; width: 120px; }
+        button { padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; }
+        .btn-start { background: #e74c3c; color: white; }
+        .btn-start:disabled { background: #555; cursor: not-allowed; }
+        .btn-stop { background: #e67e22; color: white; }
+        #live { background: #0a0a1a; padding: 15px; border-radius: 8px; margin-top: 15px; font-family: monospace; font-size: 13px; min-height: 60px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 15px; }
+        .stat-card { background: #16213e; border-radius: 8px; padding: 15px; text-align: center; }
+        .stat-card .val { font-size: 28px; font-weight: bold; margin: 5px 0; }
+        .stat-card .lbl { font-size: 12px; color: #888; }
+        .ok { color: #2ecc71; }
+        .err { color: #e74c3c; }
+        .warn { color: #f1c40f; }
+        .bar-container { background: #0a0a1a; border-radius: 4px; height: 20px; margin-top: 10px; overflow: hidden; }
+        .bar { height: 100%; background: #3498db; transition: width 0.3s; border-radius: 4px; }
+        #progress-label { font-size: 12px; color: #888; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+<h1>Нагрузочный тест</h1>
+<p>Отправляет множество запросов на сервер и замеряет скорость ответа.</p>
+
+<div class="config">
+    <div>
+        <label>Всего запросов</label>
+        <input type="number" id="totalReqs" value="100" min="1" max="10000">
+    </div>
+    <div>
+        <label>Параллельных потоков</label>
+        <input type="number" id="concurrency" value="10" min="1" max="100">
+    </div>
+    <div>
+        <label>Эндпоинт</label>
+        <select id="endpoint">
+            <option value="GET:/">GET / (главная)</option>
+            <option value="POST:/api/save-lab">POST /api/save-lab</option>
+        </select>
+    </div>
+    <div>
+        <button class="btn-start" id="btnStart" onclick="startTest()">Запустить тест</button>
+        <button class="btn-stop" id="btnStop" onclick="stopTest()" style="display:none">Остановить</button>
+    </div>
+</div>
+
+<div class="bar-container"><div class="bar" id="bar" style="width:0%"></div></div>
+<div id="progress-label">0 / 0</div>
+
+<div class="stats">
+    <div class="stat-card"><div class="lbl">Выполнено</div><div class="val" id="s-done">0</div></div>
+    <div class="stat-card"><div class="lbl">Успешных (2xx)</div><div class="val ok" id="s-ok">0</div></div>
+    <div class="stat-card"><div class="lbl">Ошибок</div><div class="val err" id="s-err">0</div></div>
+    <div class="stat-card"><div class="lbl">Среднее (мс)</div><div class="val" id="s-avg">—</div></div>
+    <div class="stat-card"><div class="lbl">Мин (мс)</div><div class="val ok" id="s-min">—</div></div>
+    <div class="stat-card"><div class="lbl">Макс (мс)</div><div class="val warn" id="s-max">—</div></div>
+    <div class="stat-card"><div class="lbl">P95 (мс)</div><div class="val warn" id="s-p95">—</div></div>
+    <div class="stat-card"><div class="lbl">RPS</div><div class="val" id="s-rps">—</div></div>
+</div>
+
+<div id="live"></div>
+
+<script>
+let stopped = false;
+let csrfToken = null;
+let csrfHeader = null;
+
+async function fetchCsrf() {
+    try {
+        const res = await fetch('/');
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const tMeta = doc.querySelector('meta[name="_csrf"]');
+        const hMeta = doc.querySelector('meta[name="_csrf_header"]');
+        if (tMeta && hMeta) {
+            csrfToken = tMeta.getAttribute('content');
+            csrfHeader = hMeta.getAttribute('content');
+        }
+    } catch (e) { /* ignore */ }
+}
+
+async function startTest() {
+    stopped = false;
+    const total = parseInt(document.getElementById('totalReqs').value);
+    const conc = parseInt(document.getElementById('concurrency').value);
+    const raw = document.getElementById('endpoint').value;
+    const method = raw.split(':')[0];
+    const url = raw.split(':').slice(1).join(':');
+
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('btnStop').style.display = 'inline';
+    document.getElementById('live').innerHTML = 'Подготовка...\n';
+
+    if (method === 'POST') {
+        await fetchCsrf();
+        if (!csrfToken) {
+            document.getElementById('live').innerHTML += 'Не удалось получить CSRF-токен. Сначала залогинься на /\n';
+            document.getElementById('btnStart').disabled = false;
+            document.getElementById('btnStop').style.display = 'none';
+            return;
+        }
+    }
+
+    const times = [];
+    let done = 0, ok = 0, errors = 0;
+    const startTime = performance.now();
+
+    function updateUI() {
+        document.getElementById('s-done').textContent = done;
+        document.getElementById('s-ok').textContent = ok;
+        document.getElementById('s-err').textContent = errors;
+        document.getElementById('bar').style.width = (done / total * 100) + '%';
+        document.getElementById('progress-label').textContent = done + ' / ' + total;
+
+        if (times.length > 0) {
+            const sorted = [...times].sort((a, b) => a - b);
+            const avg = Math.round(sorted.reduce((a, b) => a + b, 0) / sorted.length);
+            const min = Math.round(sorted[0]);
+            const max = Math.round(sorted[sorted.length - 1]);
+            const p95i = Math.floor(sorted.length * 0.95);
+            const p95 = Math.round(sorted[Math.min(p95i, sorted.length - 1)]);
+            const elapsed = (performance.now() - startTime) / 1000;
+            const rps = elapsed > 0 ? (done / elapsed).toFixed(1) : '—';
+
+            document.getElementById('s-avg').textContent = avg;
+            document.getElementById('s-min').textContent = min;
+            document.getElementById('s-max').textContent = max;
+            document.getElementById('s-p95').textContent = p95;
+            document.getElementById('s-rps').textContent = rps;
+        }
+    }
+
+    async function sendOne() {
+        if (stopped) return;
+        const t0 = performance.now();
+        try {
+            const opts = { method };
+            if (method === 'POST') {
+                opts.headers = { 'Content-Type': 'application/json' };
+                if (csrfToken && csrfHeader) {
+                    opts.headers[csrfHeader] = csrfToken;
+                }
+                opts.body = JSON.stringify({ loadTest: true, ts: Date.now() });
+            }
+            const res = await fetch(url, opts);
+            const t1 = performance.now();
+            times.push(t1 - t0);
+            if (res.status >= 200 && res.status < 300) ok++;
+            else errors++;
+        } catch (e) {
+            times.push(performance.now() - t0);
+            errors++;
+        }
+        done++;
+    }
+
+    document.getElementById('live').innerHTML = 'Тест запущен: ' + total + ' запросов, ' + conc + ' потоков, ' + method + ' ' + url + '\n';
+    let sent = 0;
+
+    async function wave() {
+        const batch = [];
+        for (let i = 0; i < conc && sent < total && !stopped; i++) {
+            sent++;
+            batch.push(sendOne());
+        }
+        await Promise.all(batch);
+        updateUI();
+        if (sent < total && !stopped) {
+            await wave();
+        }
+    }
+
+    await wave();
+
+    const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+    document.getElementById('live').innerHTML += '\nГотово за ' + elapsed + ' сек.\n';
+    document.getElementById('live').innerHTML += 'Успешных: ' + ok + ', Ошибок: ' + errors + '\n';
+    document.getElementById('btnStart').disabled = false;
+    document.getElementById('btnStop').style.display = 'none';
+    updateUI();
+}
+
+function stopTest() {
+    stopped = true;
+    document.getElementById('live').innerHTML += '\nТест остановлен пользователем.\n';
+    document.getElementById('btnStart').disabled = false;
+    document.getElementById('btnStop').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
