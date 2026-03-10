@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>CSRF PoC — Тест атаки</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; background: #1a1a2e; color: #eee; padding: 20px; }
+        h1 { color: #e74c3c; }
+        .test { background: #16213e; border-radius: 10px; padding: 20px; margin: 15px 0; }
+        .test h3 { margin-top: 0; }
+        button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 5px; }
+        .btn-attack { background: #e74c3c; color: white; }
+        .btn-info { background: #3498db; color: white; }
+        .btn-good { background: #2ecc71; color: white; }
+        #results { background: #0a0a1a; padding: 15px; border-radius: 8px; margin-top: 10px; white-space: pre-wrap; font-family: monospace; font-size: 13px; min-height: 40px; }
+        .pass { color: #2ecc71; font-weight: bold; }
+        .fail { color: #e74c3c; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h1>CSRF PoC — Тестирование защиты</h1>
+<p>Эта страница раздаётся с <code>localhost:8080</code>, поэтому fetch-запросы работают корректно.</p>
+<p>Сначала <b>залогинься</b> на <a href="/" target="_blank">главной странице</a>, потом запускай тесты.</p>
+
+<div id="results">Результаты появятся здесь...</div>
+
+<div class="test">
+    <h3>Тест 1: POST без CSRF-токена (атака)</h3>
+    <p>Отправляем POST на <code>/api/save-lab</code> без токена. Ожидание: <b>403 Forbidden</b></p>
+    <button class="btn-attack" onclick="test1()">Запустить тест 1</button>
+</div>
+
+<div class="test">
+    <h3>Тест 2: POST с поддельным CSRF-токеном (атака)</h3>
+    <p>Отправляем POST с фейковым токеном. Ожидание: <b>403 Forbidden</b></p>
+    <button class="btn-attack" onclick="test2()">Запустить тест 2</button>
+</div>
+
+<div class="test">
+    <h3>Тест 3: POST с пустым CSRF-токеном (атака)</h3>
+    <p>Отправляем POST с пустой строкой вместо токена. Ожидание: <b>403 Forbidden</b></p>
+    <button class="btn-attack" onclick="test3()">Запустить тест 3</button>
+</div>
+
+<div class="test">
+    <h3>Тест 4: GET вместо POST</h3>
+    <p>Пробуем GET на POST-эндпоинт. Ожидание: <b>405 Method Not Allowed</b></p>
+    <button class="btn-attack" onclick="test4()">Запустить тест 4</button>
+</div>
+
+<div class="test">
+    <h3>Тест 5: Доступ к защищённой странице без cookies</h3>
+    <p>Проверяем, перенаправляет ли <code>/</code> на логин. Ожидание: <b>302 Redirect</b></p>
+    <button class="btn-info" onclick="test5()">Запустить тест 5</button>
+</div>
+
+<div class="test">
+    <h3>Тест 6: POST с валидным CSRF-токеном (легитимный запрос)</h3>
+    <p>Берём настоящий токен со страницы <code>/</code> и отправляем POST. Ожидание: <b>200 OK</b></p>
+    <button class="btn-good" onclick="test6()">Запустить тест 6</button>
+</div>
+
+<script>
+const API = '/api/save-lab';
+const log = document.getElementById('results');
+
+function addResult(name, status, expected, verdict) {
+    const cls = verdict.includes('PASS') ? 'pass' : 'fail';
+    log.innerHTML += '\n' + name +
+        '\n  Ответ сервера: ' + status +
+        '\n  Ожидание:     ' + expected +
+        '\n  Результат:    <span class="' + cls + '">' + verdict + '</span>' +
+        '\n' + '─'.repeat(50);
+}
+
+// Тест 1: POST без токена
+async function test1() {
+    try {
+        const res = await fetch(API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ attack: 'no-csrf-token' })
+        });
+        const ok = res.status === 403;
+        addResult('ТЕСТ 1: POST без токена', res.status + ' ' + res.statusText, '403 Forbidden', ok ? 'PASS' : 'FAIL');
+    } catch (e) {
+        addResult('ТЕСТ 1: POST без токена', 'Ошибка: ' + e.message, '403 Forbidden', 'ОШИБКА');
+    }
+}
+
+// Тест 2: POST с фейковым токеном
+async function test2() {
+    try {
+        const res = await fetch(API, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': 'fake-token-12345'
+            },
+            body: JSON.stringify({ attack: 'fake-csrf-token' })
+        });
+        const ok = res.status === 403;
+        addResult('ТЕСТ 2: POST с фейковым токеном', res.status + ' ' + res.statusText, '403 Forbidden', ok ? 'PASS' : 'FAIL');
+    } catch (e) {
+        addResult('ТЕСТ 2: POST с фейковым токеном', 'Ошибка: ' + e.message, '403 Forbidden', 'ОШИБКА');
+    }
+}
+
+// Тест 3: POST с пустым токеном
+async function test3() {
+    try {
+        const res = await fetch(API, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': ''
+            },
+            body: JSON.stringify({ attack: 'empty-csrf-token' })
+        });
+        const ok = res.status === 403;
+        addResult('ТЕСТ 3: POST с пустым токеном', res.status + ' ' + res.statusText, '403 Forbidden', ok ? 'PASS' : 'FAIL');
+    } catch (e) {
+        addResult('ТЕСТ 3: POST с пустым токеном', 'Ошибка: ' + e.message, '403 Forbidden', 'ОШИБКА');
+    }
+}
+
+// Тест 4: GET вместо POST
+async function test4() {
+    try {
+        const res = await fetch(API, { method: 'GET' });
+        const ok = res.status === 405;
+        addResult('ТЕСТ 4: GET вместо POST', res.status + ' ' + res.statusText, '405 Method Not Allowed', ok ? 'PASS' : 'FAIL');
+    } catch (e) {
+        addResult('ТЕСТ 4: GET вместо POST', 'Ошибка: ' + e.message, '405', 'ОШИБКА');
+    }
+}
+
+// Тест 5: Доступ без логина
+async function test5() {
+    try {
+        const res = await fetch('/', {
+            method: 'GET',
+            credentials: 'omit',
+            redirect: 'manual'
+        });
+        if (res.type === 'opaqueredirect' || res.status === 302) {
+            addResult('ТЕСТ 5: Доступ без логина', 'Redirect (302)', 'Redirect на /login', 'PASS');
+        } else {
+            addResult('ТЕСТ 5: Доступ без логина', res.status + ' ' + res.statusText, 'Redirect на /login', res.status === 200 ? 'FAIL (страница доступна!)' : 'НЕОПРЕДЕЛЕНО');
+        }
+    } catch (e) {
+        addResult('ТЕСТ 5: Доступ без логина', 'Ошибка: ' + e.message, 'Redirect', 'ОШИБКА');
+    }
+}
+
+// Тест 6: POST с настоящим CSRF-токеном
+async function test6() {
+    try {
+        // Получаем главную страницу (там есть CSRF мета-теги)
+        const pageRes = await fetch('/', { credentials: 'include' });
+        const html = await pageRes.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        const tokenMeta = doc.querySelector('meta[name="_csrf"]');
+        const headerMeta = doc.querySelector('meta[name="_csrf_header"]');
+
+        if (!tokenMeta || !headerMeta) {
+            addResult('ТЕСТ 6: POST с валидным токеном', 'Не удалось найти CSRF мета-теги на /', '200 OK', 'ОШИБКА (залогинься сначала)');
+            return;
+        }
+
+        const token = tokenMeta.getAttribute('content');
+        const header = headerMeta.getAttribute('content');
+
+        const res = await fetch(API, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [header]: token
+            },
+            body: JSON.stringify({ test: 'valid-csrf-token', time: new Date().toISOString() })
+        });
+        const ok = res.status === 200;
+        addResult('ТЕСТ 6: POST с валидным токеном', res.status + ' ' + res.statusText, '200 OK', ok ? 'PASS' : 'FAIL');
+    } catch (e) {
+        addResult('ТЕСТ 6: POST с валидным токеном', 'Ошибка: ' + e.message, '200 OK', 'ОШИБКА');
+    }
+}
+</script>
+
+</body>
+</html>

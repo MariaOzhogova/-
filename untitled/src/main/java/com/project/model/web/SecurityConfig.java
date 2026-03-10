@@ -22,7 +22,8 @@ public class SecurityConfig {
                                 "/api/save-lab",
                                 "/style.css",
                                 "/script.js",
-                                "/favicon.ico"
+                                "/favicon.ico",
+                                "/csrf_test.html"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
