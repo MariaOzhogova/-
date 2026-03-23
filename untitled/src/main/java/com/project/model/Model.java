@@ -6,12 +6,13 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Model {
-    private double Intensity_0;
-    private double Intensity;
-    private double Alpha;
+    private double intensity0;
+    private double phi;
+    private double result;
 
-    public double calculate_Intensity() {
-        Intensity = Intensity_0 * (Math.cos(Alpha)) * (Math.cos(Alpha));
-        return Intensity;
+    public double calculate() {
+        double rad = Math.toRadians(phi);
+        result = 0.5 * intensity0 * Math.pow(Math.cos(rad), 2);
+        return result;
     }
 }

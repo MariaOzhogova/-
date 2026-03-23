@@ -33,15 +33,15 @@ body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color
 .laser-label { position: absolute; top: -35px; width: 100%; text-align: center; color: var(--accent); font-size: 0.75rem; font-weight: 900; letter-spacing: 1.5px; }
 
 /* ПРИБОРЫ */
-#pos-pol { left: 320px; z-index: 5; }
-#pos-an { left: 620px; z-index: 5; }
+#pos-pol { left: 280px; z-index: 5; }
+#pos-an { left: 580px; z-index: 5; }
 
 /* ЛУЧИ */
-#beam-1 { left: 165px; width: 155px; }
-#beam-2 { left: 460px; width: 160px; }
-#beam-3 { left: 760px; width: 400px; }
+#beam-1 { left: 165px; width: 115px; }
+#beam-2 { left: 420px; width: 160px; }
+#beam-3 { left: 720px; width: 340px; }
 
-.beam { height: 4px; background: #fff; z-index: 1; pointer-events: none; }
+.beam { height: 4px; background: none; z-index: 1; pointer-events: none; }
 .beam-core { width: 100%; height: 100%; background: linear-gradient(90deg, #fff, var(--gold)); box-shadow: 0 0 25px var(--gold), 0 0 10px #fff; }
 
 /* ОПТИКА */
@@ -68,7 +68,8 @@ body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color
 /* ИНТЕРФЕЙС */
 .res-box { text-align: center; padding: 25px; background: linear-gradient(145deg, #1e293b, #0c1425); border-radius: 20px; border: 1px solid #334155; }
 .res-title { font-size: 0.8rem; color: #94a3b8; letter-spacing: 3px; text-transform: uppercase; }
-.res-box big { font-size: 4rem; font-weight: 900; color: var(--gold); text-shadow: 0 0 50px rgba(251, 191, 36, 0.4); }
+.res-box big { font-size: 3.5rem; font-weight: 900; color: var(--gold); text-shadow: 0 0 50px rgba(251, 191, 36, 0.4); display: block; }
+.res-unit { font-size: 0.9rem; color: #64748b; }
 
 .control-group { margin-bottom: 25px; border-bottom: 1px solid #334155; padding-bottom: 15px; }
 .control-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
@@ -90,5 +91,5 @@ body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color
 
 #status { font-weight: bold; color: var(--accent); text-align: center; border-top: 1px solid #334155; padding-top: 10px; font-size: 1rem; }
 .btn-action { color:white; border:none; padding:12px; border-radius:10px; width:100%; margin-top:15px; cursor:pointer; font-weight:bold; text-transform:uppercase; transition: 0.3s; }
-#btn-clear { background:#ef4444; } #btn-clear:hover { background: #dc2626; }
-#btn-save { background:#22c55e; margin-top:10px; } #btn-save:hover { background: #16a34a; }
+#btn-clear { background: #445bef; color: white; }  #btn-clear:hover { background: #3226dc; }
+.btn-calc { background: var(--accent); } .btn-calc:hover { background: #2563eb; }

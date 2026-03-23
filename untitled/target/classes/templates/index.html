@@ -25,7 +25,7 @@
                 <p class="subtitle">ИРНИТУ • ИТиАД • ИСИБ</p>
             </div>
             <div class="formula">
-                $$I = (I_{max} - I_{min}) \cos^2(\alpha_{diff}) + I_{min}$$
+                $$I_A = \frac{1}{2}\, I_0 \cos^2 \varphi$$
             </div>
         </div>
 
@@ -34,97 +34,111 @@
                 <div class="laser-label">ИСТОЧНИК</div>
                 <div class="laser-nozzle"></div>
                 <div class="laser-led"></div>
-                <div class="hover-info"><b>Лазер:</b> Генерирует поток естественного света.</div>
+                <div class="hover-info"><b>Лазер:</b> Генерирует поток естественного света с интенсивностью I₀.</div>
             </div>
 
             <div class="beam bench-item" id="beam-1"><div class="beam-core"></div></div>
-            <div class="beam bench-item" id="beam-2"><div class="beam-core"></div></div>
-            <div class="beam bench-item" id="beam-3"><div class="beam-core"></div></div>
 
             <div class="bench-item" id="pos-pol">
                 <div class="optic-group">
                     <div class="rim" id="rim-p"><div class="glass"><div class="vector"></div></div></div>
                     <div class="label-text">Поляризатор</div>
-                    <div class="hover-info"><b>Поляризатор:</b> Это "решетка". Она пропускает только те волны, которые совпадают с её прорезями.</div>
+                    <div class="hover-info"><b>Поляризатор:</b> Пропускает только колебания в одной плоскости. После него свет становится линейно поляризованным с интенсивностью ½I₀.</div>
                 </div>
             </div>
+
+            <div class="beam bench-item" id="beam-2"><div class="beam-core"></div></div>
 
             <div class="bench-item" id="pos-an">
                 <div class="optic-group">
                     <div class="rim" id="rim-a"><div class="glass"><div class="vector"></div></div></div>
-                    <div class="label-text">Анализатор</div>
-                    <div class="hover-info"><b>Анализатор:</b> Вторая "решетка". Вращай её, чтобы перекрыть свет.</div>
+                    <div class="label-text">Анализатор (φ)</div>
+                    <div class="hover-info"><b>Анализатор:</b> Второй поляроид. Вращай его, чтобы менять угол φ между осями пропускания и наблюдать изменение интенсивности.</div>
                 </div>
             </div>
+
+            <div class="beam bench-item" id="beam-3"><div class="beam-core"></div></div>
         </div>
 
         <div class="card chart-card">
             <canvas id="mainChart" height="280"></canvas>
-            <button id="btn-clear">Очистить данные</button>
-            <button id="btn-save" style="background:#22c55e; color:white; border:none; padding:12px; border-radius:10px; width:100%; margin-top:15px; cursor:pointer; font-weight:bold; text-transform:uppercase;">💾 Сохранить результаты</button>
+            <button id="btn-clear">Очистить график</button>
         </div>
     </div>
 
     <div class="col-right">
         <div class="card res-box">
-            <span class="res-title">Интенсивность</span>
-            <big id="val-i">100%</big>
+            <span class="res-title">Интенсивность I<sub>A</sub></span>
+            <big id="val-i" th:text="${#numbers.formatDecimal(model.result, 1, 2)}">0</big>
+            <span class="res-unit" id="val-unit"></span>
         </div>
 
         <div class="card controls">
             <div class="control-group">
                 <div class="control-header">
-                    <label class="label-gold">Поляризатор (°)</label>
-                    <input type="number" id="n-p" class="num-in" value="0">
+                    <label class="label-gold">I₀ (начальная интенсивность)</label>
+                    <input type="number" id="n-i0" th:value="${model.intensity0}" class="num-in" min="0" step="1">
                 </div>
-                <input type="range" id="r-p" min="0" max="360" value="0" step="1" class="slider-gold">
+                <input type="range" id="r-i0" min="0" max="1000" th:value="${model.intensity0}" step="1" class="slider-gold">
             </div>
 
             <div class="control-group">
                 <div class="control-header">
-                    <label class="label-blue">Анализатор (°)</label>
-                    <input type="number" id="n-a" class="num-in" value="0">
+                    <label class="label-blue">φ (угол, °)</label>
+                    <input type="number" id="n-phi" th:value="${model.phi}" class="num-in" min="0" max="360" step="1">
                 </div>
-                <input type="range" id="r-a" min="0" max="360" value="0" step="1" class="slider-blue">
-            </div>
-
-            <div class="mini-control">
-                <div class="mini-header">
-                    <span>Imax (%)</span>
-                    <input type="number" id="n-max" value="100" class="num-in-small">
-                </div>
-                <input type="range" id="r-max" min="50" max="100" value="100" style="width:100%">
-            </div>
-
-            <div class="mini-control">
-                <div class="mini-header">
-                    <span>Imin (%)</span>
-                    <input type="number" id="n-min" value="5" class="num-in-small">
-                </div>
-                <input type="range" id="r-min" min="0" max="30" value="5" style="width:100%">
+                <input type="range" id="r-phi" min="0" max="360" th:value="${model.phi}" step="1" class="slider-blue">
             </div>
         </div>
 
         <div class="card manual-text">
-            <h3>📖 Справка для новичка</h3>
+            <h3>📖 Подробная справка</h3>
+
             <div class="manual-item">
-                <strong>1. Природа света</strong>
-                <p>Свет — это волна. Лазер испускает хаотичные волны.</p>
+                <strong>Суть опыта</strong>
+                <p>Естественный (неполяризованный) свет с интенсивностью I₀ проходит последовательно через два поляроида — поляризатор и анализатор. На выходе измеряется интенсивность I_A в зависимости от угла φ между их осями пропускания.</p>
             </div>
+
             <div class="manual-item">
-                <strong>2. Суть опыта</strong>
-                <p>Мы ставим две "решетки". Первая выравнивает свет. Вторая проверяет его.</p>
+                <strong>Что такое поляризация?</strong>
+                <p>Свет — поперечная электромагнитная волна. В естественном свете вектор E колеблется во всех направлениях, перпендикулярных лучу. Поляризатор выделяет из этого хаоса только одну плоскость колебаний.</p>
             </div>
+
             <div class="manual-item">
-                <strong>3. Закон Малюса</strong>
-                <p>Если решетки скрещены (90°) — свет не проходит.</p>
+                <strong>Поляризатор</strong>
+                <p>Первый поляроид. Пропускает только ту компоненту вектора E, которая совпадает с его осью. После поляризатора интенсивность уменьшается вдвое: $I_P = \frac{1}{2} I_0$.</p>
             </div>
+
+            <div class="manual-item">
+                <strong>Анализатор</strong>
+                <p>Второй поляроид. Его ось повёрнута на угол φ относительно оси поляризатора. Проходит только проекция вектора E на ось анализатора: $E_A = E_P \cos \varphi$. Так как интенсивность пропорциональна квадрату амплитуды, получаем закон Малюса.</p>
+            </div>
+
+            <div class="manual-item">
+                <strong>Формула (Закон Малюса)</strong>
+                <p>$$I_A = \frac{1}{2}\, I_0 \cos^2 \varphi$$</p>
+            </div>
+
+            <div class="manual-item">
+                <strong>Обозначения</strong>
+                <p><b>I₀</b> — интенсивность падающего естественного света.<br>
+                   <b>φ</b> — угол между осями пропускания поляризатора и анализатора.<br>
+                   <b>I_A</b> — интенсивность после анализатора.<br>
+                   <b>½</b> — коэффициент, учитывающий потерю половины интенсивности на первом поляризаторе.</p>
+            </div>
+
+            <div class="manual-item">
+                <strong>Частные случаи</strong>
+                <p><b>φ = 0°</b> — оси параллельны → максимум: $I_A = \frac{1}{2} I_0$.<br>
+                   <b>φ = 45°</b> — $I_A = \frac{1}{4} I_0$.<br>
+                   <b>φ = 90°</b> — оси скрещены → $I_A = 0$ (свет полностью блокируется).</p>
+            </div>
+
             <div id="status">Готов к работе</div>
         </div>
     </div>
 </div>
 
-<!-- Подключаем JavaScript -->
 <script src="/script.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {

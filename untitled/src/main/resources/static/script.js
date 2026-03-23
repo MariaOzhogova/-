@@ -1,13 +1,16 @@
 // Элементы управления
-const np = document.getElementById('n-p'), rp = document.getElementById('r-p');
-const na = document.getElementById('n-a'), ra = document.getElementById('r-a');
-const nmax = document.getElementById('n-max'), rmax = document.getElementById('r-max');
-const nmin = document.getElementById('n-min'), rmin = document.getElementById('r-min');
+const nI0 = document.getElementById('n-i0'), rI0 = document.getElementById('r-i0');
+const nPhi = document.getElementById('n-phi'), rPhi = document.getElementById('r-phi');
 
 // Элементы стенда
 const rimP = document.getElementById('rim-p');
 const rimA = document.getElementById('rim-a');
-const bEnd = document.getElementById('beam-3').querySelector('.beam-core');
+const beam1 = document.getElementById('beam-1');
+const beam2 = document.getElementById('beam-2');
+const beam3 = document.getElementById('beam-3');
+const bCore1 = beam1 ? beam1.querySelector('.beam-core') : null;
+const bCore2 = beam2 ? beam2.querySelector('.beam-core') : null;
+const bEnd = beam3 ? beam3.querySelector('.beam-core') : null;
 const statusText = document.getElementById('status');
 const btnClear = document.getElementById('btn-clear');
 
@@ -15,94 +18,106 @@ let historyData = {};
 const ctx = document.getElementById('mainChart').getContext('2d');
 const chart = new Chart(ctx, {
     type: 'line',
-    data: { labels: [], datasets: [{ label: 'I(Δα)', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.15)', borderWidth: 3, fill: true, tension: 0.4, pointRadius: 2 }] },
-    options: { interaction: { mode: 'index', intersect: false }, scales: { y: { min: 0, max: 1.1, grid: { color: '#1e293b' } }, x: { grid: { display: false }, title: {display: true, text: 'Разница углов'} } }, plugins: { legend: { display: false } }, animation: false }
+    data: { labels: [], datasets: [{ label: 'Iₐ(φ)', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.15)', borderWidth: 3, fill: true, tension: 0.4, pointRadius: 2 }] },
+    options: { interaction: { mode: 'index', intersect: false }, scales: { y: { min: 0, grid: { color: '#1e293b' }, title: { display: true, text: 'Iₐ' } }, x: { grid: { display: false }, title: { display: true, text: 'φ (°)' } } }, plugins: { legend: { display: false } }, animation: false }
 });
 
-// Основная физика
-function update(recalc = false) {
-    let angP = parseFloat(np.value) || 0;
-    let angA = parseFloat(na.value) || 0;
-    const imax = parseFloat(nmax.value) / 100;
-    const imin = parseFloat(nmin.value) / 100;
+// Запрос расчёта на сервере и обновление UI
+function recalculate() {
+    const i0 = parseFloat(nI0.value) || 0;
+    const phi = parseFloat(nPhi.value) || 0;
 
-    let delta = Math.abs(angA - angP) % 180;
+    // Вращение анализатора
+    if (rimA) rimA.style.transform = 'rotate(' + phi + 'deg)';
 
-    if (recalc) {
-        for (let d in historyData) {
-            const r = parseFloat(d) * (Math.PI / 180);
-            historyData[d] = (imax - imin) * Math.pow(Math.cos(r), 2) + imin;
-        }
-    }
+    fetch('/api/calculate?intensity0=' + encodeURIComponent(i0) + '&phi=' + encodeURIComponent(phi))
+        .then(function(resp) { return resp.json(); })
+        .then(function(data) {
+            var iA = data.result;
+            document.getElementById('val-i').innerText = iA.toFixed(2);
 
-    const rad = delta * (Math.PI / 180);
-    const intensity = (imax - imin) * Math.pow(Math.cos(rad), 2) + imin;
-    historyData[delta] = intensity;
+    // Прозрачность лучей до анализатора (зависит от I₀)
+            var maxI0 = parseFloat(rI0.max) || 1000;
+            var beamOpacity = i0 > 0 ? Math.max(0.05, i0 / maxI0) : 0;
+            if (beam1) beam1.style.opacity = beamOpacity;
+            if (beam2) beam2.style.opacity = beamOpacity;
 
-    // Вращение
-    rimP.style.transform = 'rotate(' + angP + 'deg)';
-    rimA.style.transform = 'rotate(' + angA + 'deg)';
+            // Прозрачность луча после анализатора (зависит от I_A)
+            var maxIntensity = 0.5 * i0;
+            if (beam3) beam3.style.opacity = maxIntensity > 0 ? iA / maxIntensity * beamOpacity : 0;
+            historyData[phi] = iA;
+            var sorted = Object.keys(historyData).sort(function(x, y) { return parseFloat(x) - parseFloat(y); });
+            chart.data.labels = sorted.map(function(d) { return d + '°'; });
+            chart.data.datasets[0].data = sorted.map(function(d) { return historyData[d]; });
+            chart.options.scales.y.max = Math.max(i0 * 0.6, 1);
+            chart.update();
 
-    bEnd.style.opacity = intensity;
-    document.getElementById('val-i').innerText = Math.round(intensity * 100) + '%';
-
-    // График
-    const sorted = Object.keys(historyData).sort((x, y) => parseFloat(x) - parseFloat(y));
-    chart.data.labels = sorted;
-    chart.data.datasets[0].data = sorted.map(d => historyData[d]);
-    chart.update();
-
-    // Статус
-    if (delta > 85 && delta < 95) statusText.innerHTML = "🎯 ОСИ СКРЕЩЕНЫ: <span style='color:var(--gold)'>ПРОЕКЦИЯ E = 0</span>";
-    else if (delta < 5 || delta > 175) statusText.innerHTML = "🎯 ОСИ ПАРАЛЛЕЛЬНЫ: <span style='color:#22c55e'>МАКСИМУМ ИНТЕНСИВНОСТИ</span>";
-    else statusText.innerText = "Угол между фильтрами: " + delta + "°";
+            // Статус
+            var phiMod = phi % 180;
+            if (phiMod > 85 && phiMod < 95) statusText.innerHTML = "🎯 φ ≈ 90°: <span style='color:var(--gold)'>Интенсивность минимальна (I_A ≈ 0)</span>";
+            else if (phiMod < 5 || phiMod > 175) statusText.innerHTML = "🎯 φ ≈ 0°: <span style='color:#22c55e'>Интенсивность максимальна (I_A = ½I₀)</span>";
+            else statusText.innerText = "φ = " + phi + "° → I_A = " + iA.toFixed(2);
+        });
 }
 
-btnClear.onclick = function() { historyData = {}; update(); };
+btnClear.onclick = function() { historyData = {}; chart.data.labels = []; chart.data.datasets[0].data = []; chart.update(); };
 
-// Связь ползунков и текстовых полей
+// Связь ползунков и числовых полей
 function bindInputs(slider, numberInput) {
-    slider.addEventListener('input', () => { numberInput.value = slider.value; update(false); });
-    numberInput.addEventListener('input', () => { slider.value = numberInput.value; update(false); });
+    slider.addEventListener('input', function() { numberInput.value = slider.value; recalculate(); });
+    numberInput.addEventListener('input', function() { slider.value = numberInput.value; recalculate(); });
 }
 
-function bindGlobal(slider, numberInput) {
-    slider.addEventListener('input', () => { numberInput.value = slider.value; update(true); });
-    numberInput.addEventListener('input', () => { slider.value = numberInput.value; update(true); });
-}
+bindInputs(rI0, nI0);
+bindInputs(rPhi, nPhi);
 
-bindInputs(rp, np);
-bindInputs(ra, na);
-bindGlobal(rmax, nmax);
-bindGlobal(rmin, nmin);
+// Синхронизация ползунков с полями формы при загрузке (Thymeleaf задаёт value полей)
+rI0.value = nI0.value;
+rPhi.value = nPhi.value;
 
-// === БЕЗОПАСНАЯ ОТПРАВКА ДАННЫХ (CSRF Защита) ===
-function saveLabResultsToServer() {
-    const csrfMeta = document.querySelector("meta[name='_csrf']");
-    const csrfHeaderMeta = document.querySelector("meta[name='_csrf_header']");
+// Drag-вращение анализатора мышкой
+(function() {
+    if (!rimA) return;
+    var dragging = false;
+    var startAngle = 0;
+    var startPhi = 0;
 
-    if (!csrfMeta || !csrfHeaderMeta) {
-        alert("⚠️ Токен безопасности CSRF не найден! (Вы запускаете файл локально без Spring Boot сервера?)");
-        return;
+    function getAngle(e) {
+        var rect = rimA.getBoundingClientRect();
+        var cx = rect.left + rect.width / 2;
+        var cy = rect.top + rect.height / 2;
+        return Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
     }
 
-    const csrfToken = csrfMeta.getAttribute("content");
-    const csrfHeader = csrfHeaderMeta.getAttribute("content");
+    rimA.style.cursor = 'grab';
 
-    const dataToSend = { labResults: historyData };
-    fetch('/api/save-lab', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            [csrfHeader]: csrfToken
-        },
-        body: JSON.stringify(dataToSend)
-    })
-        .then(response => {
-            if (response.ok) alert("✅ Результаты безопасно сохранены на сервере!");
-            else alert("❌ Ошибка сервера (возможно неверный CSRF токен).");
-        })
-        .catch(error => console.error('Ошибка сети:', error));
-}
+    rimA.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        dragging = true;
+        startAngle = getAngle(e);
+        startPhi = parseFloat(nPhi.value) || 0;
+        rimA.style.cursor = 'grabbing';
+    });
 
-update();
+    document.addEventListener('mousemove', function(e) {
+        if (!dragging) return;
+        var current = getAngle(e);
+        var delta = current - startAngle;
+        var newPhi = startPhi + delta;
+        // Нормализация в 0..360
+        newPhi = ((newPhi % 360) + 360) % 360;
+        newPhi = Math.round(newPhi);
+        nPhi.value = newPhi;
+        rPhi.value = newPhi;
+        recalculate();
+    });
+
+    document.addEventListener('mouseup', function() {
+        if (dragging) {
+            dragging = false;
+            rimA.style.cursor = 'grab';
+        }
+    });
+})();
+
+recalculate();

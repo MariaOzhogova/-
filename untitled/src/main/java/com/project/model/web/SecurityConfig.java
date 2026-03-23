@@ -19,6 +19,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
+                                "/api/calculate",
                                 "/api/save-lab",
                                 "/style.css",
                                 "/script.js",
@@ -32,7 +33,9 @@ public class SecurityConfig {
                         .defaultSuccessUrl("/", true)
                         .permitAll()
                 )
-                .csrf(csrf -> {}); // CSRF включён
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/calculate")
+                );
 
         return http.build();
     }
