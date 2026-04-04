@@ -1,6 +1,17 @@
 // Элементы управления
 const nI0 = document.getElementById('n-i0'), rI0 = document.getElementById('r-i0');
 const nPhi = document.getElementById('n-phi'), rPhi = document.getElementById('r-phi');
+const nDecimals = document.getElementById('n-decimals');
+const btnRound = document.getElementById('btn-round');
+let lastIa = null;
+
+function getDecimals() {
+    return Math.max(0, Math.min(6, parseInt(nDecimals.value) || 0));
+}
+
+function displayResult(iA) {
+    document.getElementById('val-i').innerText = iA.toFixed(getDecimals());
+}
 
 // Элементы стенда
 const rimP = document.getElementById('rim-p');
@@ -34,7 +45,8 @@ function recalculate() {
         .then(function(resp) { return resp.json(); })
         .then(function(data) {
             var iA = data.result;
-            document.getElementById('val-i').innerText = iA.toFixed(2);
+            lastIa = iA;
+            displayResult(iA);
 
     // Прозрачность лучей до анализатора (зависит от I₀)
             var maxI0 = parseFloat(rI0.max) || 1000;
@@ -56,11 +68,20 @@ function recalculate() {
             var phiMod = phi % 180;
             if (phiMod > 85 && phiMod < 95) statusText.innerHTML = "🎯 φ ≈ 90°: <span style='color:var(--gold)'>Интенсивность минимальна (I_A ≈ 0)</span>";
             else if (phiMod < 5 || phiMod > 175) statusText.innerHTML = "🎯 φ ≈ 0°: <span style='color:#22c55e'>Интенсивность максимальна (I_A = ½I₀)</span>";
-            else statusText.innerText = "φ = " + phi + "° → I_A = " + iA.toFixed(2);
+            else statusText.innerText = "φ = " + phi + "° → I_A = " + iA.toFixed(getDecimals());
         });
 }
 
 btnClear.onclick = function() { historyData = {}; chart.data.labels = []; chart.data.datasets[0].data = []; chart.update(); };
+
+nDecimals.addEventListener('input', function() {
+    if (lastIa !== null) displayResult(lastIa);
+});
+
+btnRound.onclick = function() {
+    nDecimals.value = 0;
+    if (lastIa !== null) displayResult(lastIa);
+};
 
 // Связь ползунков и числовых полей
 function bindInputs(slider, numberInput) {
