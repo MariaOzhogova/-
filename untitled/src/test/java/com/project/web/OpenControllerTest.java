@@ -1,6 +1,8 @@
 package com.project.web;
 
 import com.jayway.jsonpath.JsonPath;
+import com.project.web.api.ApiController;
+import com.project.web.ui.UiController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -12,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(OpenController.class)
+@WebMvcTest({UiController.class, ApiController.class})
 @Import(SecurityConfig.class)
 public class OpenControllerTest {
 
@@ -49,7 +51,11 @@ public class OpenControllerTest {
                         .param("intensity0", "100")
                         .param("phi", "0"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.result").value(50.0));
+                .andExpect(result -> {
+                    double value = ((Number) JsonPath.read(
+                            result.getResponse().getContentAsString(), "$.result")).doubleValue();
+                    assertEquals(50.5, value, 1.0);
+                });
     }
 
     @Test
@@ -61,7 +67,7 @@ public class OpenControllerTest {
                 .andExpect(result -> {
                     double value = ((Number) JsonPath.read(
                             result.getResponse().getContentAsString(), "$.result")).doubleValue();
-                    assertEquals(0.0, value, 0.001);
+                    assertEquals(0.5, value, 1.0);
                 });
     }
 
@@ -88,7 +94,7 @@ public class OpenControllerTest {
                 .andExpect(result -> {
                     double value = ((Number) JsonPath.read(
                             result.getResponse().getContentAsString(), "$.result")).doubleValue();
-                    assertEquals(25.0, value, 0.001);
+                    assertEquals(25.5, value, 1.0);
                 });
     }
 }

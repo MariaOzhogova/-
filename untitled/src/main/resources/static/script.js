@@ -41,7 +41,7 @@ function recalculate() {
     // Вращение анализатора
     if (rimA) rimA.style.transform = 'rotate(' + phi + 'deg)';
 
-    fetch('/api/calculate?intensity0=' + encodeURIComponent(i0) + '&phi=' + encodeURIComponent(phi))
+    fetch('/api/calculate?intensity0=' + encodeURIComponent(i0) + '&phi=' + encodeURIComponent(phi), { cache: 'no-store' })
         .then(function(resp) { return resp.json(); })
         .then(function(data) {
             var iA = data.result;

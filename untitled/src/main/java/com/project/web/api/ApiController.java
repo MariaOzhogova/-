@@ -1,34 +1,21 @@
-package com.project.web;
+package com.project.web.api;
 
 import com.project.Model;
 import com.project.model.ErrorRate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@Controller
+@RestController
 @Slf4j
 @RequiredArgsConstructor
-public class OpenController {
+public class ApiController {
 
     private final ErrorRate errorRate;
 
-    @GetMapping("/")
-    public String index(ModelMap map) {
-        log.info("GET / — открытие главной страницы");
-        Model model = Model.builder().intensity0(100).phi(0).build();
-        model.calculate();
-        map.addAttribute("model", model);
-        log.debug("Начальные значения: I₀={}, φ={}, результат={}", model.getIntensity0(), model.getPhi(), model.getResult());
-        return "index";
-    }
-
     @GetMapping("/api/calculate")
-    @ResponseBody
     public Map<String, Double> calculateApi(
             @RequestParam double intensity0,
             @RequestParam double phi) {
@@ -44,7 +31,6 @@ public class OpenController {
     }
 
     @GetMapping("/api/error")
-    @ResponseBody
     public Map<String, Object> getError() {
         double absError = errorRate.calculateAbsoluteError();
         log.info("GET /api/error — погрешность={}, измерений={}", absError, errorRate.getMeasurements().size());
@@ -56,7 +42,6 @@ public class OpenController {
     }
 
     @PostMapping("/api/error/toggle")
-    @ResponseBody
     public Map<String, Boolean> toggleNoise() {
         errorRate.setActive(!errorRate.isActive());
         log.info("Шум {}", errorRate.isActive() ? "включён" : "выключен");
@@ -64,7 +49,6 @@ public class OpenController {
     }
 
     @PostMapping("/api/error/reset")
-    @ResponseBody
     public Map<String, String> resetMeasurements() {
         errorRate.resetMeasurements();
         return Map.of("status", "ok");

@@ -14,20 +14,35 @@ import java.util.Random;
 @Setter
 @Slf4j
 public class ErrorRate {
-    private boolean active = false;
+    private boolean active = true;
     private List<Double> measurements = new ArrayList<>();
     private Double confidenceLevel = 0.95;
     private Double studentCoefficient = 2.0;
     private Double systematicError = 0.5;
+    private Double lastTrueValue;
+    private Double lastMeasuredValue;
 
     private final Random random = new Random();
 
     public double applyNoise(double trueValue) {
         if (!active || trueValue < 0) return trueValue;
 
-        double randomComponent = -1.0 + (2.0 * random.nextDouble());
-        double measuredValue = trueValue + systematicError + randomComponent;
-        double result = Math.round(measuredValue * 100.0) / 100.0;
+        double result;
+        int retries = 0;
+
+        do {
+            double randomComponent = -1.0 + (2.0 * random.nextDouble());
+            double measuredValue = trueValue + systematicError + randomComponent;
+            result = Math.round(measuredValue * 100.0) / 100.0;
+            retries++;
+        } while (retries < 10
+                && lastTrueValue != null
+                && Double.compare(lastTrueValue, trueValue) == 0
+                && lastMeasuredValue != null
+                && Double.compare(lastMeasuredValue, result) == 0);
+
+        lastTrueValue = trueValue;
+        lastMeasuredValue = result;
         log.debug("Применён шум: истинное={}, измеренное={}", trueValue, result);
         return result;
     }
@@ -58,5 +73,7 @@ public class ErrorRate {
     public void resetMeasurements() {
         log.info("Сброс измерений (было {} записей)", measurements.size());
         measurements.clear();
+        lastTrueValue = null;
+        lastMeasuredValue = null;
     }
 }

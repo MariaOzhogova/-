@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="400" height="500">
+  <defs>
+    <!-- Градиент для шапки -->
+    <linearGradient id="hatGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f5f5ff"/>
+      <stop offset="100%" stop-color="#e0e0f0"/>
+    </linearGradient>
+    <!-- Градиент для тела -->
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8f0ff"/>
+      <stop offset="100%" stop-color="#e8d8f5"/>
+    </linearGradient>
+    <!-- Тень -->
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="rgba(0,0,0,0.12)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+    </radialGradient>
+    <!-- Румянец -->
+    <radialGradient id="blush" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="rgba(255,150,150,0.5)"/>
+      <stop offset="100%" stop-color="rgba(255,150,150,0)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Фон -->
+  <rect width="400" height="500" fill="#fdf6ff" rx="20"/>
+
+  <!-- Тень под фигуркой -->
+  <ellipse cx="200" cy="470" rx="100" ry="15" fill="url(#shadow)"/>
+
+  <!-- === ТЕЛО === -->
+  <!-- Основное тело (трапециевидное, мягкое) -->
+  <path d="M130 280 Q125 350 140 430 Q160 460 200 465 Q240 460 260 430 Q275 350 270 280 Z"
+        fill="url(#bodyGrad)" stroke="#c0b0d0" stroke-width="1.5"/>
+
+  <!-- Платье / одежда — фиолетовое -->
+  <path d="M135 300 Q130 360 145 430 Q165 455 200 458 Q235 455 255 430 Q270 360 265 300 Z"
+        fill="#9070c0" opacity="0.85" stroke="#7050a0" stroke-width="1"/>
+
+  <!-- Белый воротничок -->
+  <path d="M155 285 Q175 310 200 315 Q225 310 245 285"
+        fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <!-- Бантик на воротнике -->
+  <path d="M190 300 Q180 290 175 295 Q178 305 190 300 Z" fill="#e04060"/>
+  <path d="M210 300 Q220 290 225 295 Q222 305 210 300 Z" fill="#e04060"/>
+  <circle cx="200" cy="298" r="3" fill="#d03050"/>
+
+  <!-- Ручки (маленькие, по бокам) -->
+  <ellipse cx="128" cy="340" rx="18" ry="30" fill="#f8f0ff" stroke="#c0b0d0" stroke-width="1.5" transform="rotate(-10 128 340)"/>
+  <ellipse cx="272" cy="340" rx="18" ry="30" fill="#f8f0ff" stroke="#c0b0d0" stroke-width="1.5" transform="rotate(10 272 340)"/>
+
+  <!-- === ГОЛОВА === -->
+  <!-- Основная форма головы (большая, круглая — чиби) -->
+  <ellipse cx="200" cy="210" rx="105" ry="100" fill="#fff5f8" stroke="#d0c0d8" stroke-width="1.5"/>
+
+  <!-- === ВОЛОСЫ === -->
+  <!-- Задние волосы -->
+  <path d="M100 200 Q95 280 110 340 Q115 350 120 340 Q110 280 115 210 Z" fill="#b090d0" opacity="0.7"/>
+  <path d="M300 200 Q305 280 290 340 Q285 350 280 340 Q290 280 285 210 Z" fill="#b090d0" opacity="0.7"/>
+
+  <!-- Чёлка -->
+  <path d="M95 190 Q110 120 150 115 Q160 140 155 180 Q130 175 95 190 Z" fill="#c0a0e0" stroke="#a080c0" stroke-width="1"/>
+  <path d="M150 115 Q180 105 200 108 Q195 140 185 175 Q170 170 155 180 Q160 140 150 115 Z" fill="#c8a8e8" stroke="#a080c0" stroke-width="1"/>
+  <path d="M200 108 Q220 105 250 115 Q255 140 245 180 Q225 170 210 175 Q205 140 200 108 Z" fill="#c0a0e0" stroke="#a080c0" stroke-width="1"/>
+  <path d="M250 115 Q290 120 305 190 Q275 175 245 180 Q255 140 250 115 Z" fill="#c8a8e8" stroke="#a080c0" stroke-width="1"/>
+
+  <!-- Боковые пряди -->
+  <path d="M95 195 Q85 230 90 290 Q95 300 100 290 Q98 240 105 200 Z" fill="#c0a0e0" stroke="#a080c0" stroke-width="1"/>
+  <path d="M305 195 Q315 230 310 290 Q305 300 300 290 Q302 240 295 200 Z" fill="#c0a0e0" stroke="#a080c0" stroke-width="1"/>
+
+  <!-- === ШАПКА (Mob Cap — характерный головной убор) === -->
+  <ellipse cx="200" cy="140" rx="115" ry="50" fill="url(#hatGrad)" stroke="#c0b8d8" stroke-width="1.5"/>
+  <!-- Оборки шапки -->
+  <path d="M85 140 Q90 125 100 130 Q105 120 115 128 Q120 115 135 125 Q140 112 155 122 Q160 110 175 120 Q182 108 200 118 Q218 108 225 120 Q240 110 245 122 Q260 112 265 125 Q280 115 285 128 Q295 120 300 130 Q310 125 315 140"
+        fill="none" stroke="#c0b8d8" stroke-width="2" stroke-linecap="round"/>
+  <!-- Лента на шапке -->
+  <rect x="130" y="152" width="140" height="12" rx="6" fill="#e04060" opacity="0.8"/>
+  <!-- Бантик на шапке -->
+  <path d="M190 158 Q170 145 165 152 Q172 165 190 158 Z" fill="#e04060"/>
+  <path d="M210 158 Q230 145 235 152 Q228 165 210 158 Z" fill="#e04060"/>
+  <circle cx="200" cy="158" r="4" fill="#c03050"/>
+
+  <!-- === ЛИЦО === -->
+  <!-- Глаза (характерные точки-бусинки фумо) -->
+  <circle cx="170" cy="220" r="5" fill="#2a2040"/>
+  <circle cx="230" cy="220" r="5" fill="#2a2040"/>
+
+  <!-- Блики в глазах -->
+  <circle cx="172" cy="218" r="1.5" fill="#fff" opacity="0.8"/>
+  <circle cx="232" cy="218" r="1.5" fill="#fff" opacity="0.8"/>
+
+  <!-- Ротик (маленькая улыбка — ω-образная, как у фумо) -->
+  <path d="M190 242 Q195 248 200 244 Q205 248 210 242"
+        fill="none" stroke="#2a2040" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Румянец -->
+  <ellipse cx="155" cy="235" rx="15" ry="10" fill="url(#blush)"/>
+  <ellipse cx="245" cy="235" rx="15" ry="10" fill="url(#blush)"/>
+
+  <!-- === ДЕКОР === -->
+  <!-- Маленькие звёздочки вокруг -->
+  <g fill="#d0a0f0" opacity="0.5">
+    <polygon points="50,80 53,90 63,90 55,96 58,106 50,100 42,106 45,96 37,90 47,90" transform="scale(0.6) translate(30,50)"/>
+    <polygon points="50,80 53,90 63,90 55,96 58,106 50,100 42,106 45,96 37,90 47,90" transform="scale(0.5) translate(620,60)"/>
+    <polygon points="50,80 53,90 63,90 55,96 58,106 50,100 42,106 45,96 37,90 47,90" transform="scale(0.4) translate(150,900)"/>
+    <polygon points="50,80 53,90 63,90 55,96 58,106 50,100 42,106 45,96 37,90 47,90" transform="scale(0.45) translate(700,850)"/>
+  </g>
+
+  <!-- Подпись -->
+  <text x="200" y="495" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#b090c0" opacity="0.6">~ fumo ~</text>
+</svg>
