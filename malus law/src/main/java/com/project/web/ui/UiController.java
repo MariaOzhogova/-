@@ -13,12 +13,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class UiController {
 
     @GetMapping("/")
-    public String index(ModelMap map) {
-        log.info("GET / — открытие главной страницы");
+    public String title() {
+        return "title";
+    }
+
+    @GetMapping("/malus-law")
+    public String malusLaw(ModelMap map) {
+        log.info("GET /malus-law - opening Malus law laboratory page");
         Model model = Model.builder().intensity0(100).phi(0).build();
         model.calculate();
         map.addAttribute("model", model);
-        log.debug("Начальные значения: I₀={}, φ={}, результат={}", model.getIntensity0(), model.getPhi(), model.getResult());
-        return "index";
+        log.debug("Initial values: I0={}, phi={}, result={}", model.getIntensity0(), model.getPhi(), model.getResult());
+        return "malus-law";
     }
 }

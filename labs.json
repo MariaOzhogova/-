@@ -1,0 +1,12 @@
+﻿[
+  {
+    "student": "Наша лабораторная",
+    "title": "Лабораторная работа по закону Малюса",
+    "url": "http://localhost:8080/malus-law"
+  },
+  {
+    "student": "Наша лguipuiopuiopабораторная",
+    "title": "Лабораторная работа guipuoipпо закону Малюса",
+    "url": "http://localhost:8000/malus-law"
+  }
+]
