@@ -1,12 +1,7 @@
 ﻿[
   {
-    "student": "Наша лабораторная",
-    "title": "Лабораторная работа по закону Малюса",
+    "student": "Закон Малюса",
+    "title": "Ожогова Мария, Петров Илья",
     "url": "http://localhost:8080/malus-law"
-  },
-  {
-    "student": "Наша лguipuiopuiopабораторная",
-    "title": "Лабораторная работа guipuoipпо закону Малюса",
-    "url": "http://localhost:8000/malus-law"
   }
 ]
