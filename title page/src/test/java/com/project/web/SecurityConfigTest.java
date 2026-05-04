@@ -23,14 +23,14 @@ public class SecurityConfigTest {
     // --- Проверка доступа к публичным ресурсам ---
 
     @Test
-    void staticCss_shouldBeAccessibleWithoutAuth() throws Exception {
-        mockMvc.perform(get("/style.css"))
+    void titleCss_shouldBeAccessibleWithoutAuth() throws Exception {
+        mockMvc.perform(get("/title.css"))
                 .andExpect(status().isOk());
     }
 
     @Test
-    void staticJs_shouldBeAccessibleWithoutAuth() throws Exception {
-        mockMvc.perform(get("/script.js"))
+    void titleJs_shouldBeAccessibleWithoutAuth() throws Exception {
+        mockMvc.perform(get("/title.js"))
                 .andExpect(status().isOk());
     }
 
